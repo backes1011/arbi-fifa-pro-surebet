@@ -21,12 +21,19 @@ def safe_float(x, default=2.00):
 def safe_str(x, default=""):
     return unquote(x) if x not in [None, "", "null", "None"] else default
 
+# Leitura dos parâmetros via URL (campos ocultos para URL)
+oddA_url = st.text_input("Odd A (URL)", value=get_query_param("oddsA", ""), key="url_oddsA", type="default", label_visibility="collapsed")
+oddB_url = st.text_input("Odd B (URL)", value=get_query_param("oddsB", ""), key="url_oddsB", type="default", label_visibility="collapsed")
+casaA_url = st.text_input("Casa A (URL)", value=get_query_param("casaA", ""), key="url_casaA", type="default", label_visibility="collapsed")
+casaB_url = st.text_input("Casa B (URL)", value=get_query_param("casaB", ""), key="url_casaB", type="default", label_visibility="collapsed")
+evento_url = st.text_input("Evento (URL)", value=get_query_param("evento", ""), key="url_evento", type="default", label_visibility="collapsed")
+
 if 'initialized' not in st.session_state:
-    st.session_state['evento'] = safe_str(get_query_param("evento", ""))
-    st.session_state['odds_a'] = safe_float(get_query_param("oddsA", 2.00))
-    st.session_state['odds_b'] = safe_float(get_query_param("oddsB", 2.00))
-    st.session_state['casa_a'] = safe_str(get_query_param("casaA", ""))
-    st.session_state['casa_b'] = safe_str(get_query_param("casaB", ""))
+    st.session_state['evento'] = safe_str(evento_url)
+    st.session_state['odds_a'] = safe_float(oddA_url, 2.00)
+    st.session_state['odds_b'] = safe_float(oddB_url, 2.00)
+    st.session_state['casa_a'] = safe_str(casaA_url)
+    st.session_state['casa_b'] = safe_str(casaB_url)
     st.session_state['valor_total'] = 100
     st.session_state['initialized'] = True
 
@@ -88,24 +95,23 @@ valor_total = st.number_input(
     key="valor_total"
 )
 
-# CALCULO IDEAL (arredondado)
-aposta_a = valor_total / (1 + (odds_a / odds_b))
-aposta_b = valor_total - aposta_a
+# CALCULO TEÓRICO DO PERCENTUAL (fixo, para as odds)
+surebet_percent = (1/odds_a + 1/odds_b) * 100
+lucro_percent_teorico = 100 - surebet_percent
+is_surebet = surebet_percent < 100
 
-aposta_a_int = int(aposta_a)  # igual BetBurger: normalmente trunca
+# Valores a apostar (inteiros, arredondados para baixo)
+aposta_a = valor_total / (1 + (odds_a / odds_b))
+aposta_a_int = int(aposta_a)
 aposta_b_int = valor_total - aposta_a_int
 
-# Cálculo do retorno real com os inteiros
+# Retornos reais (com valores inteiros)
 retorno_a = aposta_a_int * odds_a
 retorno_b = aposta_b_int * odds_b
-
 lucro_a = retorno_a - valor_total
 lucro_b = retorno_b - valor_total
-
-lucro_min = min(lucro_a, lucro_b)
-lucro_percent = (lucro_min / valor_total) * 100 if valor_total > 0 else 0
-
-is_surebet = (1/odds_a + 1/odds_b) < 1
+lucro_real = min(lucro_a, lucro_b)
+lucro_percent_real = (lucro_real / valor_total) * 100 if valor_total > 0 else 0
 
 st.markdown("### Resultado do cálculo")
 if is_surebet:
@@ -129,11 +135,12 @@ if is_surebet:
         """, unsafe_allow_html=True)
     st.markdown(f"""
         <div style='background:#fffbe6;border-radius:10px;padding:20px 10px 10px 10px;margin-top:5px;margin-bottom:10px;text-align:center'>
-            <span style='font-size:2.6em; font-weight:bold; color:#096b2c;'>💰 R$ {lucro_min:.2f}</span>
-            <span style='font-size:2.2em; font-weight:800; color:#faad14; margin-left:18px;'>+{lucro_percent:.2f}%</span><br>
-            <span style='font-size:1.1em; color:#333; font-weight:600; letter-spacing:0.3px'>Lucro garantido sobre o total apostado</span>
+            <span style='font-size:2.6em; font-weight:bold; color:#096b2c;'>💰 R$ {lucro_real:.2f}</span>
+            <span style='font-size:2.2em; font-weight:800; color:#faad14; margin-left:18px;'>+{lucro_percent_teorico:.2f}%</span><br>
+            <span style='font-size:1.1em; color:#333; font-weight:600; letter-spacing:0.3px'>Lucro garantido sobre o total apostado (teórico para as odds)</span>
         </div>
     """, unsafe_allow_html=True)
+    st.markdown(f"<center><small>Obs: O valor em R$ é calculado com os valores inteiros. O percentual é sempre o teórico das odds.</small></center>", unsafe_allow_html=True)
 else:
     st.error("❌ Não há surebet nessas odds.")
 
