@@ -89,53 +89,69 @@ valor_total = st.number_input(
     key="valor_total"
 )
 
-# ----------- CÁLCULO IGUAL BETBURGER -----------
-# Percentual teórico (fixo para as odds)
+# --- Percentual teórico, SEMPRE fixo para as odds ---
 surebet_percent = (1/odds_a + 1/odds_b) * 100
 lucro_percent_teorico = 100 - surebet_percent
 is_surebet = surebet_percent < 100
 
-# Valores a apostar (inteiros, arredondados para baixo igual BetBurger)
+# --- Cálculo dos valores a apostar (arredondado para baixo) ---
 aposta_a = valor_total / (1 + (odds_a / odds_b))
 aposta_a_int = int(aposta_a)
 aposta_b_int = valor_total - aposta_a_int
 
-# Retornos reais (com valores inteiros)
+# --- Retornos de cada casa (com apostas inteiras) ---
 retorno_a = aposta_a_int * odds_a
 retorno_b = aposta_b_int * odds_b
 lucro_a = retorno_a - valor_total
 lucro_b = retorno_b - valor_total
+
+# Percentual de lucro real para cada casa (não exibido em destaque, só como referência na tabela)
+lucro_a_percent = (lucro_a / valor_total) * 100
+lucro_b_percent = (lucro_b / valor_total) * 100
+
+# Lucro garantido mínimo (igual BetBurger)
 lucro_real = min(lucro_a, lucro_b)
+
+# ---------- Apresentação igual BetBurger -----------
+# Percentual teórico no topo
+st.markdown(f"""
+    <div style='display:flex;align-items:center;justify-content:left;gap:18px; margin-bottom:12px;'>
+        <div style='background:#f5f7fb;border-radius:8px;padding:12px 22px;font-size:2.1em; font-weight:900; color:#138e52;letter-spacing:0.5px;'>
+            {lucro_percent_teorico:.2f}% 
+        </div>
+        <div style='font-size:1.22em;color:#868686;'>Lucro percentual teórico</div>
+    </div>
+""", unsafe_allow_html=True)
 
 st.markdown("### Resultado do cálculo")
 if is_surebet:
     st.success(f"✅ **Surebet encontrada!**")
-    colA, colB = st.columns(2)
-    with colA:
-        st.markdown(f"""
-            <div style='background:#eafbee;border-radius:9px;padding:12px;text-align:center;margin-bottom:10px;'>
-                <b style='font-size:1.3em; color:#1a3b5d'>{casa_a or "Casa A"}</b><br>
-                <span style='font-size:1.15em;'>Odd <b>{odds_a:.2f}</b></span><br>
-                <span style='color:#228B22; font-weight:bold; font-size:1.22em;'>Apostar R$ {aposta_a_int}</span>
-            </div>
-        """, unsafe_allow_html=True)
-    with colB:
-        st.markdown(f"""
-            <div style='background:#eafbee;border-radius:9px;padding:12px;text-align:center;margin-bottom:10px;'>
-                <b style='font-size:1.3em; color:#1a3b5d'>{casa_b or "Casa B"}</b><br>
-                <span style='font-size:1.15em;'>Odd <b>{odds_b:.2f}</b></span><br>
-                <span style='color:#228B22; font-weight:bold; font-size:1.22em;'>Apostar R$ {aposta_b_int}</span>
-            </div>
-        """, unsafe_allow_html=True)
+
+    st.markdown(
+        "<div style='display:flex;gap:16px;'>"
+        f"<div style='background:#eafbee;border-radius:12px;padding:18px 28px 12px 28px;width: 50%;text-align:center;'><b style='font-size:1.25em;color:#1a3b5d'>{casa_a or 'Casa A'}</b><br>"
+        f"Odd <b>{odds_a:.2f}</b><br>"
+        f"Apostar <b style='color:#228B22;font-size:1.17em;'>R$ {aposta_a_int}</b><br>"
+        f"<span style='font-size:1.1em;'>Lucro se vencer:<br>"
+        f"<b style='color:#096b2c;'>R$ {lucro_a:.2f}</b> &nbsp; <span style='color:#faad14;'>{lucro_a_percent:.2f}%</span></span></div>"
+        f"<div style='background:#eafbee;border-radius:12px;padding:18px 28px 12px 28px;width: 50%;text-align:center;'><b style='font-size:1.25em;color:#1a3b5d'>{casa_b or 'Casa B'}</b><br>"
+        f"Odd <b>{odds_b:.2f}</b><br>"
+        f"Apostar <b style='color:#228B22;font-size:1.17em;'>R$ {aposta_b_int}</b><br>"
+        f"<span style='font-size:1.1em;'>Lucro se vencer:<br>"
+        f"<b style='color:#096b2c;'>R$ {lucro_b:.2f}</b> &nbsp; <span style='color:#faad14;'>{lucro_b_percent:.2f}%</span></span></div>"
+        "</div>",
+        unsafe_allow_html=True
+    )
+
     st.markdown(f"""
-        <div style='background:#fffbe6;border-radius:10px;padding:20px 10px 10px 10px;margin-top:5px;margin-bottom:10px;text-align:center'>
+        <div style='background:#fffbe6;border-radius:10px;padding:20px 10px 10px 10px;margin-top:18px;margin-bottom:10px;text-align:center'>
             <span style='font-size:2.6em; font-weight:bold; color:#096b2c;'>💰 R$ {lucro_real:.2f}</span>
-            <span style='font-size:2.2em; font-weight:800; color:#faad14; margin-left:18px;'>+{lucro_percent_teorico:.2f}%</span><br>
-            <span style='font-size:1.1em; color:#333; font-weight:600; letter-spacing:0.3px'>Lucro garantido sobre o total apostado</span>
+            <span style='font-size:2.2em; font-weight:800; color:#faad14; margin-left:18px;'>({lucro_percent_teorico:.2f}%)</span><br>
+            <span style='font-size:1.1em; color:#333; font-weight:600; letter-spacing:0.3px'>Lucro garantido (mínimo entre as casas) — Percentual sempre fixo!</span>
         </div>
     """, unsafe_allow_html=True)
     st.markdown(
-        f"<center><small>O percentual é sempre o teórico das odds, igual BetBurger. O valor em R$ é o garantido, usando apostas inteiras.</small></center>",
+        f"<center><small>O percentual no topo e abaixo é sempre o teórico das odds, igual BetBurger. O valor em R$ é garantido, usando apostas inteiras. Lucro em cada casa é exibido para consulta, mas o garantido é sempre o menor dos dois.</small></center>",
         unsafe_allow_html=True
     )
 else:
