@@ -14,7 +14,9 @@ def safe_float(x, default=2.00):
     try:
         if isinstance(x, str):
             x = x.replace(",", ".").strip()
-        return float(x)
+        val = float(x)
+        # Nunca permitir abaixo de 1.01
+        return val if val >= 1.01 else default
     except Exception:
         return default
 
@@ -42,12 +44,15 @@ if evento:
 # ==== Entradas: Casa + Odd lado a lado ====
 st.write("Preencha as odds e o nome das casas, ou use o link automático do sinal.")
 
+odds_a_val = max(safe_float(oddsA_url, 2.00), 1.01)
+odds_b_val = max(safe_float(oddsB_url, 2.00), 1.01)
+
 col_odd_a, col_casa_a = st.columns([2, 3])
 with col_odd_a:
     odds_a = st.number_input(
         "Odd",
         min_value=1.01,
-        value=safe_float(oddsA_url, 2.00),
+        value=odds_a_val,
         step=0.01,
         format="%.2f",
         key="odd_a"
@@ -64,7 +69,7 @@ with col_odd_b:
     odds_b = st.number_input(
         "Odd",
         min_value=1.01,
-        value=safe_float(oddsB_url, 2.00),
+        value=odds_b_val,
         step=0.01,
         format="%.2f",
         key="odd_b"
