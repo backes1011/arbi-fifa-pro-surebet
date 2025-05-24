@@ -46,7 +46,6 @@ with col2:
 
 st.write("Preencha as odds e o nome das casas, ou use o link automático do sinal.")
 
-# Odds e casas lado a lado (editáveis, visíveis)
 col_odd_a, col_casa_a = st.columns(2)
 with col_odd_a:
     odds_a = st.number_input(
@@ -90,20 +89,23 @@ valor_total = st.number_input(
     key="valor_total"
 )
 
-# Cálculo surebet real
-is_surebet = (1/odds_a + 1/odds_b) < 1
+# ----------- CÁLCULO IGUAL BETBURGER -----------
+# Percentual teórico (fixo para as odds)
+surebet_percent = (1/odds_a + 1/odds_b) * 100
+lucro_percent_teorico = 100 - surebet_percent
+is_surebet = surebet_percent < 100
 
+# Valores a apostar (inteiros, arredondados para baixo igual BetBurger)
 aposta_a = valor_total / (1 + (odds_a / odds_b))
 aposta_a_int = int(aposta_a)
 aposta_b_int = valor_total - aposta_a_int
 
+# Retornos reais (com valores inteiros)
 retorno_a = aposta_a_int * odds_a
 retorno_b = aposta_b_int * odds_b
 lucro_a = retorno_a - valor_total
 lucro_b = retorno_b - valor_total
-
 lucro_real = min(lucro_a, lucro_b)
-lucro_percent = (lucro_real / valor_total) * 100 if valor_total > 0 else 0
 
 st.markdown("### Resultado do cálculo")
 if is_surebet:
@@ -128,10 +130,14 @@ if is_surebet:
     st.markdown(f"""
         <div style='background:#fffbe6;border-radius:10px;padding:20px 10px 10px 10px;margin-top:5px;margin-bottom:10px;text-align:center'>
             <span style='font-size:2.6em; font-weight:bold; color:#096b2c;'>💰 R$ {lucro_real:.2f}</span>
-            <span style='font-size:2.2em; font-weight:800; color:#faad14; margin-left:18px;'>+{lucro_percent:.2f}%</span><br>
+            <span style='font-size:2.2em; font-weight:800; color:#faad14; margin-left:18px;'>+{lucro_percent_teorico:.2f}%</span><br>
             <span style='font-size:1.1em; color:#333; font-weight:600; letter-spacing:0.3px'>Lucro garantido sobre o total apostado</span>
         </div>
     """, unsafe_allow_html=True)
+    st.markdown(
+        f"<center><small>O percentual é sempre o teórico das odds, igual BetBurger. O valor em R$ é o garantido, usando apostas inteiras.</small></center>",
+        unsafe_allow_html=True
+    )
 else:
     st.error("❌ Não há surebet nessas odds.")
 
