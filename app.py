@@ -1,10 +1,9 @@
 import streamlit as st
-import math
 from urllib.parse import unquote
 
 # ====== Função para pegar parâmetros da URL ======
 def get_query_param(key, default=""):
-    return st.experimental_get_query_params().get(key, [default])[0]
+    return st.query_params.get(key, [default])[0] if hasattr(st, 'query_params') else default
 
 # ====== Parâmetros recebidos via URL ======
 evento = get_query_param("evento")
@@ -27,12 +26,50 @@ with col2:
 if evento:
     st.markdown(f"<div style='background:#eafbee;padding:8px 18px;border-radius:8px;font-size:1.2em'><b>Jogo:</b> {unquote(evento)}</div>", unsafe_allow_html=True)
 
-# ==== Campos de entrada já preenchidos pelo link ====
-casa_a = st.text_input("Nome da Casa A", value=unquote(casaA_url) if casaA_url else "Casa A")
-casa_b = st.text_input("Nome da Casa B", value=unquote(casaB_url) if casaB_url else "Casa B")
-odds_a = st.number_input(f"Odd {casa_a}", min_value=1.01, value=float(oddsA_url) if oddsA_url else 2.00, step=0.01, format="%.2f")
-odds_b = st.number_input(f"Odd {casa_b}", min_value=1.01, value=float(oddsB_url) if oddsB_url else 2.00, step=0.01, format="%.2f")
-valor_total = st.number_input("Valor total para apostar (apenas inteiros)", min_value=1, value=100, step=1, format="%d")
+# ==== Entradas: Casa + Odd lado a lado ====
+st.write("Preencha as odds e o nome das casas, ou use o link automático do sinal.")
+
+col_odd_a, col_casa_a = st.columns([2, 3])
+with col_odd_a:
+    odds_a = st.number_input(
+        "Odd",
+        min_value=1.01,
+        value=float(oddsA_url) if oddsA_url else 2.00,
+        step=0.01,
+        format="%.2f",
+        key="odd_a"
+    )
+with col_casa_a:
+    casa_a = st.text_input(
+        "Casa",
+        value=unquote(casaA_url) if casaA_url else "Casa A",
+        key="casa_a"
+    )
+
+col_odd_b, col_casa_b = st.columns([2, 3])
+with col_odd_b:
+    odds_b = st.number_input(
+        "Odd",
+        min_value=1.01,
+        value=float(oddsB_url) if oddsB_url else 2.00,
+        step=0.01,
+        format="%.2f",
+        key="odd_b"
+    )
+with col_casa_b:
+    casa_b = st.text_input(
+        "Casa",
+        value=unquote(casaB_url) if casaB_url else "Casa B",
+        key="casa_b"
+    )
+
+valor_total = st.number_input(
+    "Valor total para apostar (apenas inteiros)",
+    min_value=1,
+    value=100,
+    step=1,
+    format="%d"
+)
 
 # ===== Cálculo Surebet =====
 surebet_percent = (1/odds_a + 1/odds_b) * 100
