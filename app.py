@@ -4,7 +4,6 @@ from urllib.parse import unquote
 # ===== Função para pegar parâmetros da URL =====
 def get_query_param(key, default=""):
     try:
-        # Prefer st.query_params se existir, senão fallback para experimental
         query_params = st.query_params if hasattr(st, "query_params") else st.experimental_get_query_params()
         value = query_params.get(key, [default])[0]
         return value if value not in [None, "", "null", "None"] else default
@@ -23,12 +22,15 @@ def safe_float(x, default=2.00):
 def safe_str(x, default=""):
     return unquote(x) if x not in [None, "", "null", "None"] else default
 
-# ====== Parâmetros recebidos via URL ======
-evento = safe_str(get_query_param("evento", ""))
-oddsA_url = get_query_param("oddsA", "")
-oddsB_url = get_query_param("oddsB", "")
-casaA_url = safe_str(get_query_param("casaA", ""))
-casaB_url = safe_str(get_query_param("casaB", ""))
+# --- Inicializa campos apenas uma vez por sessão ---
+if 'initialized' not in st.session_state:
+    st.session_state['evento'] = safe_str(get_query_param("evento", ""))
+    st.session_state['odds_a'] = safe_float(get_query_param("oddsA", 2.00))
+    st.session_state['odds_b'] = safe_float(get_query_param("oddsB", 2.00))
+    st.session_state['casa_a'] = safe_str(get_query_param("casaA", ""))
+    st.session_state['casa_b'] = safe_str(get_query_param("casaB", ""))
+    st.session_state['valor_total'] = 100
+    st.session_state['initialized'] = True
 
 # ===== Exibe logo + nome =====
 col1, col2 = st.columns([1, 5])
@@ -40,18 +42,18 @@ with col2:
         <h4 style='color:gray; margin-top:0;'>Calculadora de Surebet 2 vias</h4>
     """, unsafe_allow_html=True)
 
+evento = st.session_state['evento']
 if evento:
     st.markdown(f"<div style='background:#eafbee;padding:8px 18px;border-radius:8px;font-size:1.2em'><b>Jogo:</b> {evento}</div>", unsafe_allow_html=True)
 
 st.write("Preencha as odds e o nome das casas, ou use o link automático do sinal.")
 
-# ========== CAMPOS ===========
 col_odd_a, col_casa_a = st.columns([2, 3])
 with col_odd_a:
     odds_a = st.number_input(
         "Odd",
         min_value=1.01,
-        value=safe_float(oddsA_url, 2.00),
+        value=st.session_state['odds_a'],
         step=0.01,
         format="%.2f",
         key="odd_a"
@@ -59,7 +61,7 @@ with col_odd_a:
 with col_casa_a:
     casa_a = st.text_input(
         "Casa",
-        value=casaA_url if casaA_url else "",
+        value=st.session_state['casa_a'],
         key="casa_a"
     )
 
@@ -68,7 +70,7 @@ with col_odd_b:
     odds_b = st.number_input(
         "Odd",
         min_value=1.01,
-        value=safe_float(oddsB_url, 2.00),
+        value=st.session_state['odds_b'],
         step=0.01,
         format="%.2f",
         key="odd_b"
@@ -76,37 +78,33 @@ with col_odd_b:
 with col_casa_b:
     casa_b = st.text_input(
         "Casa",
-        value=casaB_url if casaB_url else "",
+        value=st.session_state['casa_b'],
         key="casa_b"
     )
 
 valor_total = st.number_input(
     "Valor total para apostar (apenas inteiros)",
     min_value=1,
-    value=100,
+    value=st.session_state['valor_total'],
     step=1,
-    format="%d"
+    format="%d",
+    key="valor_total"
 )
 
-# ===== Cálculo Surebet ====
-
-invsure = 1/odds_a + 1/odds_b
-surebet_percent = invsure * 100
+# ===== Cálculo Surebet CORRETO ====
+surebet_percent = (1/odds_a + 1/odds_b) * 100
+lucro_percent = 100 - surebet_percent
 is_surebet = surebet_percent < 100
 
-# Cálculo clássico
-aposta_a = valor_total / (1 + (odds_a/odds_b))
+# Aposta ideal em cada casa
+aposta_a = valor_total / (1 + (odds_a / odds_b))
 aposta_b = valor_total - aposta_a
 
 aposta_a_int = int(round(aposta_a))
 aposta_b_int = int(round(aposta_b))
 
-# Lucro (em ambos os cenários)
-retorno_a = aposta_a_int * odds_a
-retorno_b = aposta_b_int * odds_b
-lucro = min(retorno_a, retorno_b) - valor_total
-lucro_percent = (lucro / valor_total) * 100 if valor_total > 0 else 0
-lucro_reais = int(round(lucro))
+# Lucro em reais — sempre fixo pela fórmula
+lucro_reais = int(round(valor_total * lucro_percent / 100))
 
 # ==== APRESENTAÇÃO =====
 st.markdown("### Resultado do cálculo")
