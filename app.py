@@ -1,7 +1,6 @@
 import streamlit as st
 from urllib.parse import unquote
 
-# ===== Função para pegar parâmetros da URL =====
 def get_query_param(key, default=""):
     try:
         query_params = st.query_params if hasattr(st, "query_params") else st.experimental_get_query_params()
@@ -22,7 +21,6 @@ def safe_float(x, default=2.00):
 def safe_str(x, default=""):
     return unquote(x) if x not in [None, "", "null", "None"] else default
 
-# --- Inicializa campos apenas uma vez por sessão ---
 if 'initialized' not in st.session_state:
     st.session_state['evento'] = safe_str(get_query_param("evento", ""))
     st.session_state['odds_a'] = safe_float(get_query_param("oddsA", 2.00))
@@ -32,7 +30,6 @@ if 'initialized' not in st.session_state:
     st.session_state['valor_total'] = 100
     st.session_state['initialized'] = True
 
-# ===== Exibe logo + nome =====
 col1, col2 = st.columns([1, 5])
 with col1:
     st.image("logo.png", width=90)
@@ -91,22 +88,22 @@ valor_total = st.number_input(
     key="valor_total"
 )
 
-# ===== Cálculo Surebet CORRETO ====
+# CALCULO TEÓRICO
 surebet_percent = (1/odds_a + 1/odds_b) * 100
 lucro_percent = 100 - surebet_percent
 is_surebet = surebet_percent < 100
 
-# Aposta ideal em cada casa
-aposta_a = valor_total / (1 + (odds_a / odds_b))
-aposta_b = valor_total - aposta_a
+# Apostas teóricas
+aposta_a_teorico = valor_total / (1 + (odds_a / odds_b))
+aposta_b_teorico = valor_total - aposta_a_teorico
 
-aposta_a_int = int(round(aposta_a))
-aposta_b_int = int(round(aposta_b))
+# Mostra para o usuário os valores arredondados (para facilitar)
+aposta_a_int = int(round(aposta_a_teorico))
+aposta_b_int = int(round(aposta_b_teorico))
 
-# Lucro em reais — sempre fixo pela fórmula
+# Lucro teórico
 lucro_reais = int(round(valor_total * lucro_percent / 100))
 
-# ==== APRESENTAÇÃO =====
 st.markdown("### Resultado do cálculo")
 if is_surebet:
     st.success(f"✅ **Surebet encontrada!**")
