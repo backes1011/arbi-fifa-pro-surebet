@@ -6,7 +6,8 @@ def get_query_param(key, default=""):
     try:
         # Prefer st.query_params se existir, senão fallback para experimental
         query_params = st.query_params if hasattr(st, "query_params") else st.experimental_get_query_params()
-        return query_params.get(key, [default])[0]
+        value = query_params.get(key, [default])[0]
+        return value if value not in [None, "", "null", "None"] else default
     except Exception:
         return default
 
@@ -21,11 +22,11 @@ def safe_float(x, default=2.00):
         return default
 
 # ====== Parâmetros recebidos via URL ======
-evento = get_query_param("evento")
-oddsA_url = get_query_param("oddsA")
-oddsB_url = get_query_param("oddsB")
-casaA_url = get_query_param("casaA")
-casaB_url = get_query_param("casaB")
+evento = get_query_param("evento", "")
+oddsA_url = get_query_param("oddsA", "")
+oddsB_url = get_query_param("oddsB", "")
+casaA_url = get_query_param("casaA", "")
+casaB_url = get_query_param("casaB", "")
 
 # ===== Exibe logo + nome =====
 col1, col2 = st.columns([1, 5])
@@ -37,15 +38,17 @@ with col2:
         <h4 style='color:gray; margin-top:0;'>Calculadora de Surebet 2 vias</h4>
     """, unsafe_allow_html=True)
 
-# ==== Se veio pelo link de sinal, exibe o evento em destaque ====
-if evento:
+# ==== Só mostra o evento se for válido ====
+if evento not in ["", "A", None, "null", "None"]:
     st.markdown(f"<div style='background:#eafbee;padding:8px 18px;border-radius:8px;font-size:1.2em'><b>Jogo:</b> {unquote(evento)}</div>", unsafe_allow_html=True)
 
-# ==== Entradas: Casa + Odd lado a lado ====
 st.write("Preencha as odds e o nome das casas, ou use o link automático do sinal.")
 
+# Odds e casas
 odds_a_val = max(safe_float(oddsA_url, 2.00), 1.01)
 odds_b_val = max(safe_float(oddsB_url, 2.00), 1.01)
+casa_a_val = unquote(casaA_url) if casaA_url not in ["", "null", "None"] else ""
+casa_b_val = unquote(casaB_url) if casaB_url not in ["", "null", "None"] else ""
 
 col_odd_a, col_casa_a = st.columns([2, 3])
 with col_odd_a:
@@ -60,7 +63,7 @@ with col_odd_a:
 with col_casa_a:
     casa_a = st.text_input(
         "Casa",
-        value=unquote(casaA_url) if casaA_url else "Casa A",
+        value=casa_a_val,
         key="casa_a"
     )
 
@@ -77,7 +80,7 @@ with col_odd_b:
 with col_casa_b:
     casa_b = st.text_input(
         "Casa",
-        value=unquote(casaB_url) if casaB_url else "Casa B",
+        value=casa_b_val,
         key="casa_b"
     )
 
