@@ -82,27 +82,30 @@ with col_casa_b:
 valor_total = st.number_input(
     "Valor total para apostar (apenas inteiros)",
     min_value=1,
-    value=st.session_state['valor_total'],
+    value=int(st.session_state['valor_total']),
     step=1,
     format="%d",
     key="valor_total"
 )
 
-# CALCULO TEÓRICO
-surebet_percent = (1/odds_a + 1/odds_b) * 100
-lucro_percent = 100 - surebet_percent
-is_surebet = surebet_percent < 100
+# CALCULO IDEAL (arredondado)
+aposta_a = valor_total / (1 + (odds_a / odds_b))
+aposta_b = valor_total - aposta_a
 
-# Apostas teóricas
-aposta_a_teorico = valor_total / (1 + (odds_a / odds_b))
-aposta_b_teorico = valor_total - aposta_a_teorico
+aposta_a_int = int(aposta_a)  # igual BetBurger: normalmente trunca
+aposta_b_int = valor_total - aposta_a_int
 
-# Mostra para o usuário os valores arredondados (para facilitar)
-aposta_a_int = int(round(aposta_a_teorico))
-aposta_b_int = int(round(aposta_b_teorico))
+# Cálculo do retorno real com os inteiros
+retorno_a = aposta_a_int * odds_a
+retorno_b = aposta_b_int * odds_b
 
-# Lucro teórico
-lucro_reais = int(round(valor_total * lucro_percent / 100))
+lucro_a = retorno_a - valor_total
+lucro_b = retorno_b - valor_total
+
+lucro_min = min(lucro_a, lucro_b)
+lucro_percent = (lucro_min / valor_total) * 100 if valor_total > 0 else 0
+
+is_surebet = (1/odds_a + 1/odds_b) < 1
 
 st.markdown("### Resultado do cálculo")
 if is_surebet:
@@ -126,7 +129,7 @@ if is_surebet:
         """, unsafe_allow_html=True)
     st.markdown(f"""
         <div style='background:#fffbe6;border-radius:10px;padding:20px 10px 10px 10px;margin-top:5px;margin-bottom:10px;text-align:center'>
-            <span style='font-size:2.6em; font-weight:bold; color:#096b2c;'>💰 R$ {lucro_reais}</span>
+            <span style='font-size:2.6em; font-weight:bold; color:#096b2c;'>💰 R$ {lucro_min:.2f}</span>
             <span style='font-size:2.2em; font-weight:800; color:#faad14; margin-left:18px;'>+{lucro_percent:.2f}%</span><br>
             <span style='font-size:1.1em; color:#333; font-weight:600; letter-spacing:0.3px'>Lucro garantido sobre o total apostado</span>
         </div>
