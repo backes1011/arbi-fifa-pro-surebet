@@ -3,7 +3,20 @@ from urllib.parse import unquote
 
 # ====== Função para pegar parâmetros da URL ======
 def get_query_param(key, default=""):
-    return st.query_params.get(key, [default])[0] if hasattr(st, 'query_params') else default
+    try:
+        # Prefer st.query_params se existir, senão fallback para experimental
+        query_params = st.query_params if hasattr(st, "query_params") else st.experimental_get_query_params()
+        return query_params.get(key, [default])[0]
+    except Exception:
+        return default
+
+def safe_float(x, default=2.00):
+    try:
+        if isinstance(x, str):
+            x = x.replace(",", ".").strip()
+        return float(x)
+    except Exception:
+        return default
 
 # ====== Parâmetros recebidos via URL ======
 evento = get_query_param("evento")
@@ -34,7 +47,7 @@ with col_odd_a:
     odds_a = st.number_input(
         "Odd",
         min_value=1.01,
-        value=float(oddsA_url) if oddsA_url else 2.00,
+        value=safe_float(oddsA_url, 2.00),
         step=0.01,
         format="%.2f",
         key="odd_a"
@@ -51,7 +64,7 @@ with col_odd_b:
     odds_b = st.number_input(
         "Odd",
         min_value=1.01,
-        value=float(oddsB_url) if oddsB_url else 2.00,
+        value=safe_float(oddsB_url, 2.00),
         step=0.01,
         format="%.2f",
         key="odd_b"
